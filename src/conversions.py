@@ -1,4 +1,5 @@
 from textnode import TextNode, TextType
+import re
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     out = []
@@ -14,8 +15,50 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
             for i in range(n_parts):
                 if text_parts[i] == "":
                     continue
-                if (i & 1 == 0):
+                elif (i & 1 == 0):
                     out.append(TextNode(text_parts[i], TextType.TEXT))
                 else:
                     out.append(TextNode(text_parts[i], text_type))
+    return out
+
+def extract_markdown_images(text):
+    return re.findall(r"!\[(.*?)\]\((.*?)\)", text)
+
+def extract_markdown_links(text):
+    return re.findall(r"\[(.*?)\]\((.*?)\)", text)
+
+def split_nodes_image(old_nodes):
+    out = []
+    for old_node in old_nodes:
+        text = old_node.text
+        matches = extract_markdown_images(text)
+        if matches == []:
+            out.append(old_node)
+        else:
+            for (alt_text, url) in matches:
+                sections = text.split(f"![{alt_text}]({url})", 1)
+                if sections[0] != "":
+                    out.append(TextNode(sections[0], TextType.TEXT))
+                out.append(TextNode(alt_text, TextType.IMAGE, url))
+                text = sections[1]
+        if text != "":
+            out.append(TextNode(text, TextType.TEXT))
+    return out
+
+def split_nodes_link(old_nodes):
+    out = []
+    for old_node in old_nodes:
+        text = old_node.text
+        matches = extract_markdown_links(text)
+        if matches == []:
+            out.append(old_node)
+        else:
+            for (alt_text, url) in matches:
+                sections = text.split(f"[{alt_text}]({url})", 1)
+                if sections[0] != "":
+                    out.append(TextNode(sections[0], TextType.TEXT))
+                out.append(TextNode(alt_text, TextType.LINK, url))
+                text = sections[1]
+        if text != "":
+            out.append(TextNode(text, TextType.TEXT))
     return out
