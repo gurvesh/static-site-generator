@@ -28,6 +28,7 @@ def extract_markdown_links(text):
     return re.findall(r"\[(.*?)\]\((.*?)\)", text)
 
 def split_nodes_image(old_nodes):
+    text = ""
     out = []
     for old_node in old_nodes:
         text = old_node.text
@@ -41,12 +42,13 @@ def split_nodes_image(old_nodes):
                     out.append(TextNode(sections[0], TextType.TEXT))
                 out.append(TextNode(alt_text, TextType.IMAGE, url))
                 text = sections[1]
-        if text != "":
-            out.append(TextNode(text, TextType.TEXT))
+    if text != "": # Leftover text
+        out.append(TextNode(text, TextType.TEXT))
     return out
 
 def split_nodes_link(old_nodes):
     out = []
+    text = ""
     for old_node in old_nodes:
         text = old_node.text
         matches = extract_markdown_links(text)
@@ -59,6 +61,20 @@ def split_nodes_link(old_nodes):
                     out.append(TextNode(sections[0], TextType.TEXT))
                 out.append(TextNode(alt_text, TextType.LINK, url))
                 text = sections[1]
-        if text != "":
-            out.append(TextNode(text, TextType.TEXT))
+    if text != "": # Leftover text
+        out.append(TextNode(text, TextType.TEXT))
+    return out
+
+def text_to_textnodes(text):
+    delimiter_dict = {
+        '**': TextType.BOLD,
+        '_' : TextType.ITALIC,
+        '`' : TextType.CODE
+    }
+    out = [TextNode(text, TextType.TEXT)]
+    for delimiter in delimiter_dict:
+        out = split_nodes_delimiter(out, delimiter, delimiter_dict[delimiter])
+
+    out = split_nodes_image(out)
+    out = split_nodes_link(out)
     return out
