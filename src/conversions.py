@@ -35,6 +35,7 @@ def split_nodes_image(old_nodes):
         matches = extract_markdown_images(text)
         if matches == []:
             out.append(old_node)
+            text = "" # Reset text
         else:
             for (alt_text, url) in matches:
                 sections = text.split(f"![{alt_text}]({url})", 1)
@@ -42,7 +43,7 @@ def split_nodes_image(old_nodes):
                     out.append(TextNode(sections[0], TextType.TEXT))
                 out.append(TextNode(alt_text, TextType.IMAGE, url))
                 text = sections[1]
-    if text != "": # Leftover text
+    if text != "": # Leftover text after all images, and why we need to reset if no match
         out.append(TextNode(text, TextType.TEXT))
     return out
 
@@ -54,6 +55,7 @@ def split_nodes_link(old_nodes):
         matches = extract_markdown_links(text)
         if matches == []:
             out.append(old_node)
+            text = "" # Reset text
         else:
             for (alt_text, url) in matches:
                 sections = text.split(f"[{alt_text}]({url})", 1)
@@ -61,7 +63,7 @@ def split_nodes_link(old_nodes):
                     out.append(TextNode(sections[0], TextType.TEXT))
                 out.append(TextNode(alt_text, TextType.LINK, url))
                 text = sections[1]
-    if text != "": # Leftover text
+    if text != "": # Leftover text after all links, and why we need to reset if no match
         out.append(TextNode(text, TextType.TEXT))
     return out
 
