@@ -3,18 +3,24 @@ from blocks import markdown_to_html_node
 import os
 import shutil
 import re
+import sys
 
 def main():
     # dummy_node = TextNode("This is some anchor text", TextType.ANCHOR_TEXT, "https://www.boot.dev")
     # print(dummy_node)
+    if len(sys.argv) < 2:
+        basepath = "/"
+    else:
+        basepath = sys.argv[1]
     cwd = os.getcwd()
     source = os.path.join(cwd, "static")
-    dest = os.path.join(cwd, "public")
+    dest = os.path.join(cwd, "docs")
     recurse_copy_dir(source, dest)
     md_loc = os.path.join(cwd, "content")
     template_loc = os.path.join(cwd, "template.html")
-    dest_path = os.path.join(cwd, "public")
-    generate_page_recursive(md_loc, template_loc, dest_path)
+    dest_path = os.path.join(cwd, "docs")
+    generate_page_recursive(md_loc, template_loc, dest_path, basepath)
+
 
 def recurse_copy_dir(source, dest):
     if not os.path.exists(source):
@@ -39,7 +45,7 @@ def extract_title(markdown):
             return line[2:].strip()
     raise Exception("Title not found! Document must have a title")
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
     full_md = ""
     template = ""
@@ -57,11 +63,13 @@ def generate_page(from_path, template_path, dest_path):
 
     full_html = template.replace("{{ Title }}", title)
     full_html = full_html.replace("{{ Content }}", html)
+    full_html = full_html.replace('href="/', f'href="{basepath}')
+    full_html = full_html.replace('src="/', f'src="{basepath}')
 
     with open(dest_path, 'w+') as f:
         f.write(full_html)
 
-def generate_page_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_page_recursive(dir_path_content, template_path, dest_dir_path, basepath):
     if not os.path.exists(dir_path_content):
         raise Exception(f"please check path: dir_path_content: {dir_path_content}")
     if not os.path.exists(dest_dir_path):
@@ -72,10 +80,10 @@ def generate_page_recursive(dir_path_content, template_path, dest_dir_path):
             item_name = item.split(".")[0]
             dest_item_name = item_name + ".html"
             full_dest = os.path.join(dest_dir_path, dest_item_name)
-            generate_page(item_full_loc, template_path, full_dest)
+            generate_page(item_full_loc, template_path, full_dest, basepath)
         elif os.path.isdir(item_full_loc):
             new_dir_path_content = item_full_loc
             new_dest_dir_path = os.path.join(dest_dir_path, item)
-            generate_page_recursive(new_dir_path_content, template_path, new_dest_dir_path)
+            generate_page_recursive(new_dir_path_content, template_path, new_dest_dir_path, basepath)
 
 main()
